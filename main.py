@@ -1,39 +1,97 @@
 from fastapi import FastAPI
+import requests
 
 app = FastAPI()
 
+def get_live_price(ticker):
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=3)
+        data = res.json()
+        meta = data['chart']['result'][0]['meta']
+        ltp = meta['regularMarketPrice']
+        prev_close = meta['chartPreviousClose']
+        change = round(ltp - prev_close, 2)
+        change_percent = round((change / prev_close) * 100, 2)
+        return ltp, change, change_percent
+    except Exception as e:
+        return None, None, None
+
 @app.get("/market")
 def get_market():
+    nifty_ltp, nifty_chg, nifty_pct = get_live_price("^NSEI")
+    sensex_ltp, sensex_chg, sensex_pct = get_live_price("^BSESN")
+
+    if not nifty_ltp:
+        nifty_ltp, nifty_chg, nifty_pct = 22776.00, 180.50, 0.80
+    if not sensex_ltp:
+        sensex_ltp, sensex_chg, sensex_pct = 75120.40, 520.10, 0.70
+
+    stock_tickers = {
+        "RELIANCE": "RELIANCE.NS",
+        "TCS": "TCS.NS",
+        "INFY": "INFY.NS",
+        "HDFCBANK": "HDFCBANK.NS",
+        "ICICIBANK": "ICICIBANK.NS",
+        "TATAMOTORS": "TATAMOTORS.NS",
+        "SBIN": "SBIN.NS",
+        "BHARTIARTL": "BHARTIARTL.NS"
+    }
+
+    stock_names = {
+        "RELIANCE": "Reliance Industries Ltd",
+        "TCS": "Tata Consultancy Services",
+        "INFY": "Infosys Limited",
+        "HDFCBANK": "HDFC Bank Limited",
+        "ICICIBANK": "ICICI Bank Limited",
+        "TATAMOTORS": "Tata Motors Limited",
+        "SBIN": "State Bank of India",
+        "BHARTIARTL": "BHARTIARTL.NS"
+    }
+
+    stocks = []
+    for symbol, ticker in stock_tickers.items():
+        ltp, chg, pct = get_live_price(ticker)
+        if ltp is None:
+            if symbol == "RELIANCE": ltp, chg, pct = 2995.00, 45.20, 1.53
+            elif symbol == "TCS": ltp, chg, pct = 3980.00, 12.50, 0.32
+            elif symbol == "INFY": ltp, chg, pct = 1640.50, 22.30, 1.38
+            elif symbol == "HDFCBANK": ltp, chg, pct = 1465.00, 15.00, 1.03
+            elif symbol == "ICICIBANK": ltp, chg, pct = 1105.00, 18.60, 1.71
+            elif symbol == "TATAMOTORS": ltp, chg, pct = 995.00, 32.80, 3.41
+            elif symbol == "SBIN": ltp, chg, pct = 775.00, 12.10, 1.59
+            else: ltp, chg, pct = 1230.00, 15.50, 1.27
+
+        stocks.append({
+            "symbol": symbol,
+            "name": stock_names[symbol],
+            "ltp": ltp,
+            "change": chg,
+            "changePercent": pct
+        })
+
     return {
         "success": True,
         "nifty": {
             "symbol": "NIFTY 50",
-            "ltp": 22450.75,
-            "change": 125.40,
-            "change_percent": 0.56
+            "ltp": nifty_ltp,
+            "change": nifty_chg,
+            "change_percent": nifty_pct
         },
         "sensex": {
             "symbol": "SENSEX",
-            "ltp": 73880.20,
-            "change": 390.15,
-            "change_percent": 0.53
+            "ltp": sensex_ltp,
+            "change": sensex_chg,
+            "change_percent": sensex_pct
         },
-        "stocks": [
-            {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "ltp": 2980.50, "change": 35.20, "changePercent": 1.19},
-            {"symbol": "TCS", "name": "Tata Consultancy Services", "ltp": 3950.00, "change": -18.50, "changePercent": -0.47},
-            {"symbol": "INFY", "name": "Infosys Limited", "ltp": 1620.10, "change": 12.30, "changePercent": 0.77},
-            {"symbol": "HDFCBANK", "name": "HDFC Bank Limited", "ltp": 1450.75, "change": -8.20, "changePercent": -0.56},
-            {"symbol": "ICICIBANK", "name": "ICICI Bank Limited", "ltp": 1085.30, "change": 14.60, "changePercent": 1.36},
-            {"symbol": "TATAMOTORS", "name": "Tata Motors Limited", "ltp": 975.40, "change": 22.80, "changePercent": 2.39},
-            {"symbol": "SBIN", "name": "State Bank of India", "ltp": 760.25, "change": 5.10, "changePercent": 0.68},
-            {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "ltp": 1210.00, "change": -4.50, "changePercent": -0.37}
-        ]
+        "stocks": stocks
     }
 
 @app.post("/login/1.0/tradeApiLogin")
 def login():
     return {
-        "success": True,
+        "success": "True",
         "message": "Login successful",
         "token": "03ce2a5d-317e-4736-afc2-94ce8a8ef0ac"
     }
