@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import requests
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
@@ -28,6 +29,25 @@ def get_market():
     if not sensex_ltp:
         sensex_ltp, sensex_chg, sensex_pct = 75120.40, 520.10, 0.70
 
+    # Generate Option Chain based on live Nifty Spot
+    base_strike = round(nifty_ltp / 50.0) * 50.0
+    strikes = [base_strike + (i * 50) for i in range(-5, 6)]
+
+    option_chain = []
+    for strike in strikes:
+        diff = strike - nifty_ltp
+        ce_price = max(5.0, round(max(0.0, nifty_ltp - strike) + 120.0 - (diff * 0.1), 2))
+        pe_price = max(5.0, round(max(0.0, strike - nifty_ltp) + 120.0 + (diff * 0.1), 2))
+        option_chain.append({
+            "strikePrice": strike,
+            "ceSymbol": f"NIFTY_CE_{int(strike)}",
+            "ceLtp": ce_price,
+            "ceChange": 1.5,
+            "peSymbol": f"NIFTY_PE_{int(strike)}",
+            "peLtp": pe_price,
+            "peChange": -1.2
+        })
+
     stock_tickers = {
         "RELIANCE": "RELIANCE.NS",
         "TCS": "TCS.NS",
@@ -47,7 +67,7 @@ def get_market():
         "ICICIBANK": "ICICI Bank Limited",
         "TATAMOTORS": "Tata Motors Limited",
         "SBIN": "State Bank of India",
-        "BHARTIARTL": "BHARTIARTL.NS"
+        "BHARTIARTL": "Bharti Airtel Ltd"
     }
 
     stocks = []
@@ -85,13 +105,14 @@ def get_market():
             "change": sensex_chg,
             "change_percent": sensex_pct
         },
-        "stocks": stocks
+        "stocks": stocks,
+        "optionChain": option_chain
     }
 
 @app.post("/login/1.0/tradeApiLogin")
 def login():
     return {
-        "success": "True",
+        "success": True,
         "message": "Login successful",
         "token": "03ce2a5d-317e-4736-afc2-94ce8a8ef0ac"
     }
