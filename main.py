@@ -4,18 +4,13 @@ from datetime import datetime, timedelta
 
 app = FastAPI()
 
-def get_next_thursdays():
-    thursdays = []
+def get_next_expiries():
+    expiries = []
     today = datetime.now()
-    days_ahead = 3 - today.weekday() # Thursday is weekday 3
-    if days_ahead < 0:
-        days_ahead += 7
-    next_thu = today + timedelta(days=days_ahead)
-
     for i in range(4):
-        thu = next_thu + timedelta(days=i*7)
-        thursdays.append(thu.strftime("%d-%b-%Y").upper())
-    return thursdays
+        exp_date = today + timedelta(days=i*7)
+        expiries.append(exp_date.strftime("%d-%b-%Y").upper())
+    return expiries
 
 def get_live_price(ticker):
     try:
@@ -42,7 +37,7 @@ def get_market():
     if not sensex_ltp:
         sensex_ltp, sensex_chg, sensex_pct = 75120.40, 520.10, 0.70
 
-    expiries = get_next_thursdays()
+    expiries = get_next_expiries()
     base_strike = round(nifty_ltp / 50.0) * 50.0
     strikes = [base_strike + (i * 50) for i in range(-5, 6)]
 
@@ -66,7 +61,7 @@ def get_market():
         "TCS": "TCS.NS",
         "INFY": "INFY.NS",
         "HDFCBANK": "HDFCBANK.NS",
-        "ICICIBANK": "ICICIBANK.NS",
+        "ICICIBANK": "ICICI.NS",
         "TATAMOTORS": "TATAMOTORS.NS",
         "SBIN": "SBIN.NS",
         "BHARTIARTL": "BHARTIARTL.NS"
