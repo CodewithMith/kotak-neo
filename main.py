@@ -10,7 +10,7 @@ def get_live_price(ticker):
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m"
         headers = {"User-Agent": "Mozilla/5.0"}
-        res = requests.get(url, headers=headers, timeout=3)
+        res = requests.get(url, headers=headers, timeout=1.5)
         data = res.json()
         meta = data['chart']['result'][0]['meta']
         ltp = meta['regularMarketPrice']
