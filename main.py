@@ -1,16 +1,10 @@
 from fastapi import FastAPI
 import requests
-from datetime import datetime, timedelta
 
 app = FastAPI()
 
 def get_next_expiries():
-    expiries = []
-    today = datetime.now()
-    for i in range(4):
-        exp_date = today + timedelta(days=i*7)
-        expiries.append(exp_date.strftime("%d-%b-%Y").upper())
-    return expiries
+    return ["13-OCT-2026", "20-OCT-2026", "27-OCT-2026", "03-NOV-2026"]
 
 def get_live_price(ticker):
     try:
@@ -48,10 +42,10 @@ def get_market():
         pe_price = max(5.0, round(max(0.0, strike - nifty_ltp) + 120.0 + (diff * 0.1), 2))
         option_chain.append({
             "strikePrice": strike,
-            "ceSymbol": f"NIFTY_CE_{int(strike)}",
+            "ceSymbol": f"NIFTY_13OCT_{int(strike)}_CE",
             "ceLtp": ce_price,
             "ceChange": 1.5,
-            "peSymbol": f"NIFTY_PE_{int(strike)}",
+            "peSymbol": f"NIFTY_13OCT_{int(strike)}_PE",
             "peLtp": pe_price,
             "peChange": -1.2
         })
