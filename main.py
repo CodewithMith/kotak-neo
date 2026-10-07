@@ -4,6 +4,19 @@ from datetime import datetime, timedelta
 
 app = FastAPI()
 
+def get_next_thursdays():
+    thursdays = []
+    today = datetime.now()
+    days_ahead = 3 - today.weekday() # Thursday is weekday 3
+    if days_ahead < 0:
+        days_ahead += 7
+    next_thu = today + timedelta(days=days_ahead)
+
+    for i in range(4):
+        thu = next_thu + timedelta(days=i*7)
+        thursdays.append(thu.strftime("%d-%b-%Y").upper())
+    return thursdays
+
 def get_live_price(ticker):
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1m"
@@ -29,7 +42,7 @@ def get_market():
     if not sensex_ltp:
         sensex_ltp, sensex_chg, sensex_pct = 75120.40, 520.10, 0.70
 
-    # Generate Option Chain based on live Nifty Spot
+    expiries = get_next_thursdays()
     base_strike = round(nifty_ltp / 50.0) * 50.0
     strikes = [base_strike + (i * 50) for i in range(-5, 6)]
 
@@ -106,7 +119,8 @@ def get_market():
             "change_percent": sensex_pct
         },
         "stocks": stocks,
-        "optionChain": option_chain
+        "optionChain": option_chain,
+        "expiries": expiries
     }
 
 @app.post("/login/1.0/tradeApiLogin")
